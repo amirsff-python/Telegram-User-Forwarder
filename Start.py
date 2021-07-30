@@ -72,7 +72,7 @@ async def main():
         print("Last messages Sent Successfully")
 
     # await GetDialogs()
-    await GetLastMessages(_FromChatId, 150)
+    # await GetLastMessages(_FromChatId, 150)
 
     await client.run_until_disconnected()
 
