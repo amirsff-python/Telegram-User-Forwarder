@@ -1,41 +1,27 @@
+from db.models.Settings import Settings
+from db.models.PreviusDataForwarder import PreviusDataForwarder
 from telethon.sync import TelegramClient, events
 import json
 from db.Database import Database
+from agents.messageForwarderGuy import MessageForwarderGuy
 from tools.MessageForwarder import MessageForwarder
+import requests
+import time
+import threading
+import asyncio
 
 # These example values won't work. You must get your own api_id and
 # api_hash from https://my.telegram.org, under API Development.
 api_id = 396609
 api_hash = 'ce67f98e67793f11f1fa8e1bb8811ae6'
 
-_FromChatId = -1001192056014
-_ToChatId = -1001577013460
-# _FromChatId = -1001591080248  # TEST
-# _ToChatId = -1001515950052  # TEST
 
-
-# async def ssss():
-#     print('asd')
-
-# with TelegramClient('name', api_id, api_hash) as client:
-#     client.send_message('me', 'Hello, myself!')
-#     print(client.download_profile_photo('me'))
-# #    @client.on(events.NewMessage(pattern='(?i).*Hello'))
-#     @client.on(events.NewMessage())
-#     async def handler(event):
-#         #   await event.reply('Hey!')
-#       #   print("new mwssage")
-#       a=27
-
-#     async def asdf():
-#        print('asdddd');
-#     asdf()
-#     client.run_until_disconnected()
-
-
-client = TelegramClient('user', api_id, api_hash)
-# client = TelegramClient('userTEST', api_id, api_hash)
+client = TelegramClient('User', api_id, api_hash)
+# client = TelegramClient('user313', api_id, api_hash)
 db = Database()
+messageForwarderGuy = MessageForwarderGuy(db)
+settings = Settings(db, client)
+previusDataForwarder = PreviusDataForwarder(db, client)
 
 
 async def main():
@@ -45,36 +31,50 @@ async def main():
 
     @client.on(events.NewMessage())
     async def handler(event):
-        #   await event.reply('Hey!')
-        if event.chat_id == _FromChatId:
-            await MessageForwarder(db, client, event.message, _ToChatId)
-            print("new message")
+        await messageForwarderGuy.newMessage(client, event.message)
 
-    async def GetDialogs():
-        dialogs = await client.get_dialogs()
-        array = []
-        for item in dialogs:
-            array.append({
-                "id": item.id,
-                "name": item.name
-            })
+        # await MessageForwarder(db, client, messageForwarderGuy, _ToChatId)
+        # query = {'data':event.message.raw_text}
+        # response = requests.post('http://localhost:8000/signal360Parser', data=query)
+        # print("new message")
 
-        jsonData = json.dumps(array)
-        print('got the chats')
+    async def Cycle():
+        while(True):
+            await asyncio.sleep(5)
+            db.setSelfConnection()
+            if client.is_connected() is False:
+                continue
+            await settings.cycleFetch()
+            await previusDataForwarder.cycleFetch()
+            # print('cycle')
 
-    async def GetLastMessages(chat, count):
-        messages = await client.get_messages(chat, count)
-        messages.reverse()
-        for item in messages:
-            if item.message is not None:
-                await MessageForwarder(db, client, item, _ToChatId)
-
-        print("Last messages Sent Successfully")
-
+    # asyncio.run(Cycle,)
     # await GetDialogs()
-    # await GetLastMessages(_FromChatId, 150)
+    # await GetLastMessages(_FromChatId, 20)
 
-    await client.run_until_disconnected()
+    asyncio.gather(
+        client.run_until_disconnected(),
+        await Cycle(),
+    )
+    # await client.run_until_disconnected()
+
+
+def Resetttt():
+    time.sleep(5)
+    print('slept')
+
+
+Resetttt()
+
+
+# while(True):
+#     settings.cycleUpdate()
+#     print('cycle')
+#     time.sleep(10)
+
+
+# t1 = threading.Thread(target=Cycle, args=[])
+# t1.start()
 
 with client:
     client.loop.run_until_complete(main())
