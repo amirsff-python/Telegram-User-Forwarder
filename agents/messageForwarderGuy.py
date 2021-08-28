@@ -23,7 +23,11 @@ class MessageForwarderGuy:
                                        obj.destinationChatId)
 
                 if obj.autoBuyParserLink is not None:
-                    sendingData = {'data': message.raw_text}
-                    response = requests.post(
-                        obj.autoBuyParserLink, data=sendingData)
+                    try:
+                        sendingData = {'data': message.raw_text}
+                        response = requests.post(
+                            obj.autoBuyParserLink, data=sendingData)
+                    except:
+                        print("API Failed for forwardingChannelObject: %s" %
+                              (obj.id))
                 print("new message")
