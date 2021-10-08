@@ -36,7 +36,8 @@ class AllChatsList:
 
         self.db.insertOne(query)
 
-    async def resetAllChatsList(self):
-        self.db.clearAllChatsList()
+    async def resetAllChatsList(self, clearAllChats: bool):
+        if clearAllChats:
+            self.db.clearAllChatsList()
         allDialogs = await self.GetDialogs()
         self.insertAllChats(allDialogs)

@@ -19,8 +19,9 @@ class Settings:
         await self.cycleUpdate()
 
     async def cycleUpdate(self):
-        if self.UpdateAllChatsList == 1:
+        if self.UpdateAllChatsList > 0:
             cfi = AllChatsList(self.db, self.client)
-            await cfi.resetAllChatsList()
-            query = "UPDATE `settings` SET `UpdateAllChatsList`=0"
+            await cfi.resetAllChatsList(self.UpdateAllChatsList % 2 == 0)
+            query = "UPDATE `settings` SET `UpdateAllChatsList`=%s" % (
+                self.UpdateAllChatsList - 1)
             self.db.Update(query)
